@@ -27,7 +27,7 @@ class Book(db.Model):
 
 @app.route('/api/authors', methods=['GET'])
 def list_authors():
-    nationality = request.argument.args.get('nationality')
+    nationality = request.args.get('nationality')
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
 
@@ -72,12 +72,12 @@ def create_book():
     
     book = Book(title=title, publication_date=publication_date)
     db.session.add(book)
-    db.session.commit(book)
+    db.session.commit()
 
     return jsonify({
         'id': book.id,
         'title': book.title,
-        'publication_date': book.publication_date_str
+        'publication_date': book.publication_date.strftime('%Y-%m-%d')
     }), 201
 
 if __name__ == '__main__':

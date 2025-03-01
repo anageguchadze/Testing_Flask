@@ -38,3 +38,33 @@ def test_author_book_relationship(client):
 
         count = Book.query.filter_by(author=author).count()
         assert count == 2
+
+        db.session.delete(author)
+        db.session.commit()
+
+        total_books = Book.query.count()
+        assert total_books == 0
+
+def test_book_creation(client):
+    response = client.post(
+        '/api/books',
+        json={
+            'title': 'Harry Potter and the prisoner of Azkaban',
+            'publication_date': '1999-07-08' 
+        }
+    )
+    assert response.status_code == 401
+
+def test_author_pagination(client):
+    with app.app_context():
+        for i in range(5):
+            author = Author(name=f'Author {i}', nationality=f'Country {i}')
+            db.session.add(author)
+        db.session.commit()
+
+        response = client.get('/api/authors?per_page=5')
+        data = response.get_json()
+        assert response.status_code == 200
+        assert len(data['results']) == 5
+        assert 'next' in data
+        assert data['next'] is None
