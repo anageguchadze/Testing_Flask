@@ -14,7 +14,8 @@ class Author(db.Model):
     name = db.Column(db.String(100), nullable=False)
     nationality = db.Column(db.String(100), nullable=False)
 
-    books = db.relationship('Book', backref='author', cascade='all', delete_orphan=True, lazy=True)
+    books = db.relationship('Book', backref='author', cascade='all, delete-orphan', lazy=True)
+
 
 
 class Book(db.Model):
@@ -22,9 +23,9 @@ class Book(db.Model):
     title = db.Column(db.String(100), nullable=False)
     publication_date = db.Column(db.Date, nullable=False)
 
-    author_id = db.Column(db.Integer, db.Foreignkey('author_id'), nullable=False)
+    author_id = db.Column(db.Integer, db.ForeignKey('author.id'), nullable=False)
 
-@app.route('api/authors', methods=['GET'])
+@app.route('/api/authors', methods=['GET'])
 def list_authors():
     nationality = request.argument.args.get('nationality')
     page = request.args.get('page', 1, type=int)
