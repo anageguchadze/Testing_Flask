@@ -23,3 +23,63 @@ class Book(db.Model):
     publication_date = db.Column(db.Date, nullable=False)
 
     author_id = db.Column(db.Integer, db.Foreignkey('author_id'), nullable=False)
+
+@app.route('api/authors', methods=['GET'])
+def list_authors():
+    nationality = request.argument.args.get('nationality')
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+
+    query = Author.query
+
+    if nationality:
+        query = query.filter_by(nationality=nationality)
+
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    authors = []
+
+    for author in pagination.items:
+        authors.append({
+                'id': author.id,
+                'name': author.name,
+                'nationality': author.nationality
+            })
+        
+    next_page = None
+    if pagination.has_next:
+        next_page = f'/api/authors/?page={pagination.next_num}&per_page={per_page}'
+
+    return jsonify({'results': authors, 'next': next_page})
+
+
+@app.route('/api/books', methods=['POST'])
+def create_book():
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or auth_header != 'Token secret':
+        abort(401)
+
+    data = request.get_json()
+    title = data.get('title')
+    publication_date_str = data.get('publication_date')
+
+    if not title or not publication_date_str:
+        return jsonify({'error': 'Missing fields'})
+    try:
+        publication_date = datetime.strptime(publication_date_str, '%Y-%m-%d')
+    except ValueError:
+        return jsonify({'error': 'Invalid date format'})
+    
+    book = Book(title=title, publication_date=publication_date)
+    db.session.add(book)
+    db.session.commit(book)
+
+    return jsonify({
+        'id': book.id,
+        'title': book.title,
+        'publication_date': book.publication_date_str
+    }), 201
+
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True)
